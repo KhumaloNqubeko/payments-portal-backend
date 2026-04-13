@@ -9,14 +9,19 @@ import com.bank.paymentsportal.exception.ApiException;
 import com.bank.paymentsportal.repository.PaymentTransactionRepository;
 import com.bank.paymentsportal.repository.UserRepository;
 import com.bank.paymentsportal.security.CustomUserPrincipal;
+import com.bank.paymentsportal.validation.ValidationPatterns;
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.regex.Pattern;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class PaymentService {
+
+    private static final Pattern BENEFICIARY_ACCOUNT_PATTERN = Pattern.compile("^[A-Z0-9]{8,34}$");
+    private static final Pattern SWIFT_PATTERN = Pattern.compile(ValidationPatterns.SWIFT);
 
     private final PaymentTransactionRepository transactionRepository;
     private final UserRepository userRepository;
@@ -76,11 +81,18 @@ public class PaymentService {
     @Transactional
     public TransactionResponse verify(Long transactionId, CustomUserPrincipal principal) {
         PaymentTransaction transaction = getEmployeeTransaction(transactionId);
+        User employee = getUser(principal.getId(), "Employee not found");
         if (transaction.getStatus() != TransactionStatus.PENDING_VERIFICATION) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "Only pending transactions can be verified");
         }
+        if (!BENEFICIARY_ACCOUNT_PATTERN.matcher(transaction.getBeneficiaryAccountNumber()).matches()) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Beneficiary account number failed verification");
+        }
+        if (!SWIFT_PATTERN.matcher(transaction.getSwiftCode()).matches()) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "SWIFT code failed verification");
+        }
         transaction.setStatus(TransactionStatus.VERIFIED);
-        transaction.setVerifiedBy(principal.getUser());
+        transaction.setVerifiedBy(employee);
         auditLogService.log(principal.getId(), "VERIFY_PAYMENT", "TRANSACTION", transaction.getId(), "status=VERIFIED");
         return toResponse(transaction);
     }
@@ -88,11 +100,12 @@ public class PaymentService {
     @Transactional
     public TransactionResponse reject(Long transactionId, CustomUserPrincipal principal) {
         PaymentTransaction transaction = getEmployeeTransaction(transactionId);
+        User employee = getUser(principal.getId(), "Employee not found");
         if (transaction.getStatus() == TransactionStatus.SUBMITTED_TO_SWIFT) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "Submitted transactions cannot be rejected");
         }
         transaction.setStatus(TransactionStatus.REJECTED);
-        transaction.setVerifiedBy(principal.getUser());
+        transaction.setVerifiedBy(employee);
         auditLogService.log(principal.getId(), "REJECT_PAYMENT", "TRANSACTION", transaction.getId(), "status=REJECTED");
         return toResponse(transaction);
     }
@@ -100,11 +113,12 @@ public class PaymentService {
     @Transactional
     public TransactionResponse submitToSwift(Long transactionId, CustomUserPrincipal principal) {
         PaymentTransaction transaction = getEmployeeTransaction(transactionId);
+        User employee = getUser(principal.getId(), "Employee not found");
         if (transaction.getStatus() != TransactionStatus.VERIFIED) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "Only verified transactions can be submitted to SWIFT");
         }
         transaction.setStatus(TransactionStatus.SUBMITTED_TO_SWIFT);
-        transaction.setVerifiedBy(principal.getUser());
+        transaction.setVerifiedBy(employee);
         transaction.setSubmittedAt(OffsetDateTime.now());
         auditLogService.log(principal.getId(), "SUBMIT_TO_SWIFT", "TRANSACTION", transaction.getId(), "provider=SWIFT");
         return toResponse(transaction);
@@ -113,6 +127,11 @@ public class PaymentService {
     private PaymentTransaction getEmployeeTransaction(Long transactionId) {
         return transactionRepository.findById(transactionId)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Transaction not found"));
+    }
+
+    private User getUser(Long id, String message) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, message));
     }
 
     private TransactionResponse toResponse(PaymentTransaction transaction) {

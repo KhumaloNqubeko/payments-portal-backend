@@ -1,0 +1,41 @@
+spring:
+  application:
+    name: payments-portal-backend
+  datasource:
+    url: jdbc:postgresql://localhost:5432/payments_portal
+    username: postgres
+    password: 'Khumalo01'
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: false
+        jdbc.time_zone: UTC
+
+server:
+  port: 8080
+  ssl:
+    enabled: false
+    key-store:
+    key-store-password:
+    key-store-type: PKCS12
+  error:
+    include-message: never
+    include-binding-errors: never
+
+app:
+  frontend-url: http://localhost:5174
+  jwt:
+    secret: 8fK3!zQ9vLm2#xR7pT4wY6uB1cD8eG0hJkN5sAq
+    expiration-minutes: 120
+  security:
+    require-https: false
+
+logging:
+  level:
+    org:
+      springframework:
+        security: INFO
