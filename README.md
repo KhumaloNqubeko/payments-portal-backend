@@ -26,14 +26,14 @@ This solution contains a secure Spring Boot backend in [`payments-portal-backend
 ## Setup instructions
 
 1. Create a PostgreSQL database named `payments_portal`.
-2. Copy `src/main/resources/application-example.properties` into your environment and set matching environment variables.
+2. Copy `src/main/resources/application.yaml` into your environment.
 3. Start the backend:
 
 ```bash
 mvn spring-boot:run
 ```
 
-4. In `../payments-portal-frontend`, copy `.env.example` to `.env` and set `VITE_API_BASE_URL=http://localhost:8080/api`.
+4. In `../payments-portal-frontend`, copy `.env.example` to `.env` and set `VITE_API_BASE_URL=https://localhost:8080/api`.
 5. Start the frontend:
 
 ```bash
@@ -41,7 +41,7 @@ npm install
 npm run dev
 ```
 
-## Environment variables / properties needed
+## Environment variables / properties needed once you move to the environment
 
 - `DB_URL`
 - `DB_USERNAME`
@@ -95,10 +95,6 @@ The integration tests cover:
 - blocking employee endpoints for customers
 - verify and submit status flow
 
-## Postman collection
-
-Import [`postman/Payments-Portal.postman_collection.json`](postman/Payments-Portal.postman_collection.json).
-
 ## Known limitations
 
 - JWT logout is client-side token disposal plus audit logging; there is no token revocation list.
@@ -106,7 +102,7 @@ Import [`postman/Payments-Portal.postman_collection.json`](postman/Payments-Port
 - HTTPS redirection is configurable but requires a real certificate/keystore for production.
 - The sample login throttling is in-memory and should be replaced by shared infrastructure for multi-node deployment.
 
-## How this solution addresses the assignment requirements
+## How this solution addresses the requirements
 
 - Customer registration, login, payment capture, and transaction history are implemented in the React portal.
 - Employee login, transaction review, verification, rejection, and SWIFT submission are implemented in the employee portal and API.
