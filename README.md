@@ -26,14 +26,14 @@ This solution contains a secure Spring Boot backend in [`payments-portal-backend
 ## Setup instructions
 
 1. Create a PostgreSQL database named `payments_portal`.
-2. Copy `src/main/resources/application.yaml` into your environment.
+2. Copy `.env.example` to `.env` or set the same values in your shell environment.
 3. Start the backend:
 
 ```bash
 mvn spring-boot:run
 ```
 
-4. In `../payments-portal-frontend`, copy `.env.example` to `.env` and set `VITE_API_BASE_URL=https://localhost:8080/api`.
+4. In `../payments-portal-frontend`, copy `.env.example` to `.env` and set `VITE_API_BASE_URL=/api`.
 5. Start the frontend:
 
 ```bash
@@ -56,6 +56,10 @@ npm run dev
 - `SSL_KEY_STORE_PASSWORD`
 - `SSL_KEY_STORE_TYPE`
 
+Frontend local HTTPS:
+
+- `DEV_CERT_PASSPHRASE`
+
 ## Demo accounts
 
 - Customer 1: `ama.dlamini` / `Cust0mer!Pass1`
@@ -76,7 +80,15 @@ npm run dev
 - Login throttling filter to slow brute-force attempts.
 - Sensitive fields are masked in API responses and not logged in audit entries.
 - HTTPS/TLS-ready settings via environment variables and optional `requiresSecure()` enforcement.
-- No hardcoded database credentials or production secrets; placeholders only.
+- Secrets such as DB password, JWT secret, and SSL keystore password are loaded from environment variables instead of being committed in the active config.
+
+## DevSecOps pipeline
+
+The repository includes a GitHub Actions pipeline that runs on pushes and pull requests. It performs:
+
+- secret scanning with Gitleaks
+- frontend dependency install, audit, and production build
+- backend Maven test execution with the test profile
 
 ## Testing
 

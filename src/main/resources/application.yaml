@@ -2,9 +2,9 @@ spring:
   application:
     name: payments-portal-backend
   datasource:
-    url: jdbc:postgresql://localhost:5432/payments_portal
-    username: postgres
-    password: 'Khumalo01'
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/payments_portal}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
@@ -16,24 +16,24 @@ spring:
         jdbc.time_zone: UTC
 
 server:
-  port: 8080
+  port: ${SERVER_PORT:8080}
   ssl:
-    enabled: true
-    key-store: classpath:keystore.p12
-    key-store-password: changeit
-    key-store-type: PKCS12
+    enabled: ${SSL_ENABLED:true}
+    key-store: ${SSL_KEY_STORE:classpath:keystore.p12}
+    key-store-password: ${SSL_KEY_STORE_PASSWORD}
+    key-store-type: ${SSL_KEY_STORE_TYPE:PKCS12}
 
   error:
     include-message: never
     include-binding-errors: never
 
 app:
-  frontend-url: https://localhost:5173
+  frontend-url: ${FRONTEND_URL:https://localhost:5173}
   jwt:
-    secret: 8fK3!zQ9vLm2#xR7pT4wY6uB1cD8eG0hJkN5sAq
-    expiration-minutes: 120
+    secret: ${JWT_SECRET}
+    expiration-minutes: ${JWT_EXPIRATION_MINUTES:120}
   security:
-    require-https: true
+    require-https: ${REQUIRE_HTTPS:true}
 
 logging:
   level:
