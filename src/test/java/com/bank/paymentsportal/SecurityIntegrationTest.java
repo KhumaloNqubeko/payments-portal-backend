@@ -14,6 +14,7 @@ import com.bank.paymentsportal.entity.PaymentProvider;
 import com.bank.paymentsportal.entity.PaymentTransaction;
 import com.bank.paymentsportal.entity.TransactionStatus;
 import com.bank.paymentsportal.entity.User;
+import com.bank.paymentsportal.entity.UserRole;
 import com.bank.paymentsportal.repository.PaymentTransactionRepository;
 import com.bank.paymentsportal.repository.UserRepository;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -35,6 +36,13 @@ import org.springframework.test.web.servlet.MvcResult;
 @ActiveProfiles("test")
 class SecurityIntegrationTest {
 
+    private static final String CUSTOMER_ONE_USERNAME = "nonhlekhumzie";
+    private static final String CUSTOMER_ONE_PASSWORD = "Cust0mer!Pass1";
+    private static final String CUSTOMER_TWO_USERNAME = "bob";
+    private static final String CUSTOMER_TWO_PASSWORD = "Cust0mer!Pass2";
+    private static final String EMPLOYEE_USERNAME = "nonokhumzie";
+    private static final String EMPLOYEE_PASSWORD = "Employ3e!Pass1";
+
     @Autowired
     private MockMvc mockMvc;
 
@@ -53,11 +61,15 @@ class SecurityIntegrationTest {
     @BeforeEach
     void setup() {
         paymentTransactionRepository.deleteAll();
+        userRepository.deleteAll();
+        seedUser("Nokwandisa Khumalo", "nonhlekhumzie", "nokwandisa.khumalo@secure.com", "9001015800081", "12345678", "Cust0mer!Pass1", UserRole.CUSTOMER);
+        seedUser("Bonginkosi Tlou", "bob", "bob@secure.com", "9102025800082", "123456789", "Cust0mer!Pass2", UserRole.CUSTOMER);
+        seedUser("Nokwanda Khumalo", "nonokhumzie", "nokwanda.khumalo@secure.com", "8803035800083", "87654321", "Employ3e!Pass1", UserRole.EMPLOYEE);
     }
 
     @Test
     void invalidSwiftCodeIsRejected() throws Exception {
-        String customerToken = login("/api/auth/login", "ama.dlamini", "Cust0mer!Pass1");
+        String customerToken = login("/api/auth/login", CUSTOMER_ONE_USERNAME, CUSTOMER_ONE_PASSWORD);
 
         mockMvc.perform(post("/api/payments")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -65,7 +77,7 @@ class SecurityIntegrationTest {
                         .content("""
                                 {
                                   "amount": 1200.50,
-                                  "senderFullName": "Amahle Dlamini",
+                                  "senderFullName": "Nokwandisa Khumalo",
                                   "currency": "USD",
                                   "provider": "SWIFT",
                                   "beneficiaryName": "Acme Imports",
@@ -121,10 +133,10 @@ class SecurityIntegrationTest {
 
     @Test
     void customersCannotAccessOtherCustomersTransactions() throws Exception {
-        User owner = userRepository.findByUsername("ama.dlamini").orElseThrow();
+        User owner = userRepository.findByUsername(CUSTOMER_ONE_USERNAME).orElseThrow();
         paymentTransactionRepository.save(PaymentTransaction.builder()
                 .customer(owner)
-                .senderFullName("Amahle Dlamini")
+                .senderFullName("Nokwandisa Khumalo")
                 .amount(BigDecimal.valueOf(100))
                 .currency(CurrencyCode.USD)
                 .provider(PaymentProvider.SWIFT)
@@ -138,7 +150,7 @@ class SecurityIntegrationTest {
                 .build());
 
         Long transactionId = paymentTransactionRepository.findAll().get(0).getId();
-        String otherCustomerToken = login("/api/auth/login", "thabo.naidoo", "Cust0mer!Pass2");
+        String otherCustomerToken = login("/api/auth/login", CUSTOMER_TWO_USERNAME, CUSTOMER_TWO_PASSWORD);
 
         mockMvc.perform(get("/api/payments/{id}", transactionId)
                         .header("Authorization", bearer(otherCustomerToken)))
@@ -147,7 +159,7 @@ class SecurityIntegrationTest {
 
     @Test
     void employeeEndpointsAreBlockedForCustomers() throws Exception {
-        String customerToken = login("/api/auth/login", "ama.dlamini", "Cust0mer!Pass1");
+        String customerToken = login("/api/auth/login", CUSTOMER_ONE_USERNAME, CUSTOMER_ONE_PASSWORD);
 
         mockMvc.perform(get("/api/employee/transactions")
                         .header("Authorization", bearer(customerToken)))
@@ -156,15 +168,15 @@ class SecurityIntegrationTest {
 
     @Test
     void employeeCanVerifyAndSubmitTransaction() throws Exception {
-        String customerToken = login("/api/auth/login", "ama.dlamini", "Cust0mer!Pass1");
-        String employeeToken = login("/api/employee/auth/login", "employee.naledi", "Employ3e!Pass1");
+        String customerToken = login("/api/auth/login", CUSTOMER_ONE_USERNAME, CUSTOMER_ONE_PASSWORD);
+        String employeeToken = login("/api/employee/auth/login", EMPLOYEE_USERNAME, EMPLOYEE_PASSWORD);
 
         MvcResult paymentResult = mockMvc.perform(post("/api/payments")
                         .contentType(MediaType.APPLICATION_JSON)
                         .header("Authorization", bearer(customerToken))
                         .content("""
                                 {
-                                  "senderFullName": "Amahle Dlamini",
+                                  "senderFullName": "Nokwandisa Khumalo",
                                   "amount": 8900.25,
                                   "currency": "EUR",
                                   "provider": "SWIFT",
@@ -195,14 +207,14 @@ class SecurityIntegrationTest {
 
     @Test
     void transactionResponsesMaskSensitiveAccountNumbers() throws Exception {
-        String customerToken = login("/api/auth/login", "ama.dlamini", "Cust0mer!Pass1");
+        String customerToken = login("/api/auth/login", CUSTOMER_ONE_USERNAME, CUSTOMER_ONE_PASSWORD);
 
         mockMvc.perform(post("/api/payments")
                         .contentType(MediaType.APPLICATION_JSON)
                         .header("Authorization", bearer(customerToken))
                         .content("""
                                 {
-                                  "senderFullName": "Amahle Dlamini",
+                                  "senderFullName": "Nokwandisa Khumalo",
                                   "amount": 210.00,
                                   "currency": "GBP",
                                   "provider": "SWIFT",
@@ -236,5 +248,23 @@ class SecurityIntegrationTest {
 
     private String bearer(String token) {
         return "Bearer " + token;
+    }
+
+    private void seedUser(String fullName,
+                          String username,
+                          String email,
+                          String southAfricanIdNumber,
+                          String accountNumber,
+                          String rawPassword,
+                          UserRole role) {
+        userRepository.save(User.builder()
+                .fullName(fullName)
+                .username(username)
+                .email(email)
+                .southAfricanIdNumber(southAfricanIdNumber)
+                .accountNumber(accountNumber)
+                .passwordHash(passwordEncoder.encode(rawPassword))
+                .role(role)
+                .build());
     }
 }
