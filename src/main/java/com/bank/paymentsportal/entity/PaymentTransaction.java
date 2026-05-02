@@ -49,13 +49,25 @@ public class PaymentTransaction {
     private PaymentProvider provider;
 
     @Column(nullable = false, length = 100)
+    private String senderFullName;
+
+    @Column(nullable = false, length = 100)
     private String beneficiaryName;
+
+    @Column(nullable = false, length = 120)
+    private String beneficiaryBankName;
 
     @Column(nullable = false, length = 34)
     private String beneficiaryAccountNumber;
 
     @Column(nullable = false, length = 11)
     private String swiftCode;
+
+    @Column(nullable = false, length = 60)
+    private String country;
+
+    @Column(nullable = false, length = 140)
+    private String paymentReference;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)

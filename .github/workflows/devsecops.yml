@@ -39,3 +39,6 @@ jobs:
 
       - name: Run backend tests
         run: mvn -B "-Dspring.profiles.active=test" test
+
+      - name: Build Spring Boot application
+        run: mvn -B -DskipTests package

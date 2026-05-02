@@ -53,7 +53,11 @@ public class SecurityConfig {
             throws Exception {
         http
                 .cors(Customizer.withDefaults())
+                // CSRF is disabled here because this application uses stateless JWT
+                // bearer tokens rather than cookie-backed server sessions.
                 .csrf(AbstractHttpConfigurer::disable)
+                // Stateless auth avoids server-side session fixation issues and
+                // depends on HTTPS to protect tokens in transit.
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .exceptionHandling(exception -> exception.authenticationEntryPoint(authenticationEntryPoint))
                 .headers(headers -> headers

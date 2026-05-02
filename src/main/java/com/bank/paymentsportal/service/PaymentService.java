@@ -45,12 +45,16 @@ public class PaymentService {
 
         PaymentTransaction transaction = transactionRepository.save(PaymentTransaction.builder()
                 .customer(customer)
+                .senderFullName(request.senderFullName().trim())
                 .amount(request.amount())
                 .currency(request.currency())
                 .provider(request.provider())
                 .beneficiaryName(request.beneficiaryName().trim())
+                .beneficiaryBankName(request.beneficiaryBankName().trim())
                 .beneficiaryAccountNumber(request.beneficiaryAccountNumber())
                 .swiftCode(request.swiftCode())
+                .country(request.country().trim())
+                .paymentReference(request.paymentReference().trim())
                 .status(TransactionStatus.PENDING_VERIFICATION)
                 .build());
         auditLogService.log(principal.getId(), "CREATE_PAYMENT", "TRANSACTION", transaction.getId(), "status=PENDING_VERIFICATION");
@@ -140,9 +144,13 @@ public class PaymentService {
                 transaction.getAmount(),
                 transaction.getCurrency(),
                 transaction.getProvider(),
+                transaction.getSenderFullName(),
                 transaction.getBeneficiaryName(),
+                transaction.getBeneficiaryBankName(),
                 maskingService.maskAccount(transaction.getBeneficiaryAccountNumber()),
                 transaction.getSwiftCode(),
+                transaction.getCountry(),
+                transaction.getPaymentReference(),
                 transaction.getStatus(),
                 transaction.getCustomer().getFullName(),
                 maskingService.maskAccount(transaction.getCustomer().getAccountNumber()),

@@ -15,11 +15,11 @@ public class DataSeeder {
     CommandLineRunner seedUsers(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         return args -> {
             seedIfMissing(userRepository, passwordEncoder,
-                    "Amahle Dlamini", "ama.dlamini", "9001015800081", "12345678", "Cust0mer!Pass1", UserRole.CUSTOMER);
+                    "Nokwandisa Khumalo", "nonhlekhumzie", "nokwandisa.khumalo@secure.com", "9001015800081", "12345678", "Cust0mer!Pass1", UserRole.CUSTOMER);
             seedIfMissing(userRepository, passwordEncoder,
-                    "Thabo Naidoo", "thabo.naidoo", "9102025800082", "123456789", "Cust0mer!Pass2", UserRole.CUSTOMER);
+                    "Bonginkosi Tlou", "bob", "bob@secure.com", "9102025800082", "123456789", "Cust0mer!Pass2", UserRole.CUSTOMER);
             seedIfMissing(userRepository, passwordEncoder,
-                    "Naledi Mokoena", "employee.naledi", "8803035800083", "87654321", "Employ3e!Pass1", UserRole.EMPLOYEE);
+                    "Nokwanda Khumalo", "nonokhumzie", "nokwanda.khumalo@secure.com", "8803035800083", "87654321", "Employ3e!Pass1", UserRole.EMPLOYEE);
         };
     }
 
@@ -27,6 +27,7 @@ public class DataSeeder {
                                PasswordEncoder passwordEncoder,
                                String fullName,
                                String username,
+                               String email,
                                String southAfricanIdNumber,
                                String accountNumber,
                                String password,
@@ -35,6 +36,7 @@ public class DataSeeder {
             userRepository.save(User.builder()
                     .fullName(fullName)
                     .username(username)
+                    .email(email)
                     .southAfricanIdNumber(southAfricanIdNumber)
                     .accountNumber(accountNumber)
                     .passwordHash(passwordEncoder.encode(password))

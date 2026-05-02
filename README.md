@@ -1,6 +1,6 @@
 # International Payments Portal
 
-This solution contains a secure Spring Boot backend in [`payments-portal-backend`](.) and a React + Vite frontend in [`../payments-portal-frontend`](../payments-portal-frontend).
+This solution contains a secure Spring Boot backend in `payments-portal-backend` and a React + Vite frontend in `../payments-portal-frontend`.
 
 ## Stack
 
@@ -10,6 +10,7 @@ This solution contains a secure Spring Boot backend in [`payments-portal-backend
 - Password hashing: BCrypt
 - Validation: Jakarta Bean Validation with allowlist regex patterns
 - Testing: MockMvc integration tests
+- CI/CD: GitHub Actions
 
 ## Project structure
 
@@ -26,7 +27,7 @@ This solution contains a secure Spring Boot backend in [`payments-portal-backend
 ## Setup instructions
 
 1. Create a PostgreSQL database named `payments_portal`.
-2. Copy `.env.example` to `.env` or set the same values in your shell environment.
+2. Use `.env.example` as a reference and set the same values in your shell, IDE run configuration, or deployment environment.
 3. Start the backend:
 
 ```bash
@@ -41,7 +42,7 @@ npm install
 npm run dev
 ```
 
-## Environment variables / properties needed once you move to the environment
+## Environment variables / properties needed
 
 - `DB_URL`
 - `DB_USERNAME`
@@ -69,17 +70,22 @@ Frontend local HTTPS:
 ## Security controls implemented
 
 - BCrypt password hashing with no plaintext password storage.
+- BCrypt automatically salts each password and is intentionally slow, which helps defend against brute-force attacks.
 - Strong password policy enforced on the frontend and backend.
-- Allowlist regex validation for customer registration and payment capture fields.
+- Allowlist regex validation for registration and international payment fields.
 - JWT-based stateless authentication with RBAC for `CUSTOMER` and `EMPLOYEE`.
-- Customer endpoints restricted to the authenticated customer’s own records to prevent IDOR.
-- DTO-based request mapping to avoid mass assignment.
-- Spring Data JPA repositories and parameter binding to reduce SQL injection risk.
-- CSP, HSTS, frame denial, referrer policy, and permissions policy headers.
-- CORS restricted to the configured trusted frontend origin.
-- Login throttling filter to slow brute-force attempts.
-- Sensitive fields are masked in API responses and not logged in audit entries.
-- HTTPS/TLS-ready settings via environment variables and optional `requiresSecure()` enforcement.
+- Protected frontend routes redirect unauthenticated users to login.
+- Customer endpoints are restricted to the authenticated customer’s own records to prevent IDOR.
+- DTO-based request mapping helps prevent mass-assignment style attacks.
+- Spring Data JPA repositories and parameterised queries reduce SQL injection risk.
+- React output escaping plus backend validation help reduce XSS risk.
+- CSP, HSTS, frame denial, referrer policy, and permissions policy headers are configured.
+- CORS is restricted to the configured trusted frontend origin.
+- Login throttling slows repeated brute-force login attempts.
+- Sensitive account values are masked in API responses and not logged in audit entries.
+- HTTPS/TLS settings are driven by environment variables and `requiresSecure()` can enforce transport security.
+- Session hijacking risk is reduced by using stateless JWT authentication together with HTTPS.
+- CSRF is disabled only because this implementation uses stateless JWT bearer tokens instead of cookie-backed server sessions.
 - Secrets such as DB password, JWT secret, and SSL keystore password are loaded from environment variables instead of being committed in the active config.
 
 ## DevSecOps pipeline
@@ -87,8 +93,15 @@ Frontend local HTTPS:
 The repository includes a GitHub Actions pipeline that runs on pushes and pull requests. It performs:
 
 - secret scanning with Gitleaks
-- frontend dependency install, audit, and production build
 - backend Maven test execution with the test profile
+- backend Spring Boot package build
+
+The frontend repository also includes its own GitHub Actions pipeline for:
+
+- secret scanning with Gitleaks
+- dependency installation
+- `npm audit`
+- production build validation
 
 ## Testing
 
@@ -111,14 +124,12 @@ The integration tests cover:
 
 - JWT logout is client-side token disposal plus audit logging; there is no token revocation list.
 - SWIFT integration is intentionally mocked as a status transition for the assignment.
-- HTTPS redirection is configurable but requires a real certificate/keystore for production.
+- HTTPS redirection is configurable but requires a real certificate and keystore for production.
 - The sample login throttling is in-memory and should be replaced by shared infrastructure for multi-node deployment.
 
-## How this solution addresses the requirements
+## Tools and Ethical Disclosure
 
-- Customer registration, login, payment capture, and transaction history are implemented in the React portal.
-- Employee login, transaction review, verification, rejection, and SWIFT submission are implemented in the employee portal and API.
-- Transactions are stored with `PENDING_VERIFICATION`, then transition to `VERIFIED`, `SUBMITTED_TO_SWIFT`, or `REJECTED`.
-- Users, transactions, and audit logs are persisted with JPA entities.
-- The backend uses a clean layered Spring Boot architecture matching the requested packages.
-- Validation, security, RBAC, audit logging, documentation, demo accounts, and tests are all included.
+- AI tool used: ChatGPT
+- Security framework used: Spring Security with `BCryptPasswordEncoder`
+- Spring Security and BCrypt are safer than writing custom authentication because they reduce the risks of weak hashing, missing salts, broken sessions, insecure login handling, and other common implementation mistakes.
+- AI assistance was used to speed up scaffolding, explanation, and refinement, but the developer still reviewed, tested, and configured the final solution.

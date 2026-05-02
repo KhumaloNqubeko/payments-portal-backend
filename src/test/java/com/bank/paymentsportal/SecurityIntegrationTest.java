@@ -65,11 +65,15 @@ class SecurityIntegrationTest {
                         .content("""
                                 {
                                   "amount": 1200.50,
+                                  "senderFullName": "Amahle Dlamini",
                                   "currency": "USD",
                                   "provider": "SWIFT",
                                   "beneficiaryName": "Acme Imports",
+                                  "beneficiaryBankName": "Acme Global Bank",
                                   "beneficiaryAccountNumber": "DE12345678",
-                                  "swiftCode": "bad-swift"
+                                  "swiftCode": "bad-swift",
+                                  "country": "Germany",
+                                  "paymentReference": "Invoice 2026-001"
                                 }
                                 """))
                 .andExpect(status().isBadRequest())
@@ -84,6 +88,7 @@ class SecurityIntegrationTest {
                                 {
                                   "fullName": "Lebo Maseko",
                                   "username": "lebo.maseko",
+                                  "email": "lebo.maseko@examplebank.test",
                                   "southAfricanIdNumber": "12345",
                                   "accountNumber": "12345678",
                                   "password": "MyVery$ecure123"
@@ -101,6 +106,7 @@ class SecurityIntegrationTest {
                                 {
                                   "fullName": "Lebo Maseko",
                                   "username": "lebo.maseko",
+                                  "email": "lebo.maseko@examplebank.test",
                                   "southAfricanIdNumber": "9901015800084",
                                   "accountNumber": "23456789",
                                   "password": "MyVery$ecure123"
@@ -118,12 +124,16 @@ class SecurityIntegrationTest {
         User owner = userRepository.findByUsername("ama.dlamini").orElseThrow();
         paymentTransactionRepository.save(PaymentTransaction.builder()
                 .customer(owner)
+                .senderFullName("Amahle Dlamini")
                 .amount(BigDecimal.valueOf(100))
                 .currency(CurrencyCode.USD)
                 .provider(PaymentProvider.SWIFT)
                 .beneficiaryName("Global Supplies")
+                .beneficiaryBankName("Global Reserve Bank")
                 .beneficiaryAccountNumber("GB12345678")
                 .swiftCode("ABCDEFGH")
+                .country("United Kingdom")
+                .paymentReference("Reference 100")
                 .status(TransactionStatus.PENDING_VERIFICATION)
                 .build());
 
@@ -154,12 +164,16 @@ class SecurityIntegrationTest {
                         .header("Authorization", bearer(customerToken))
                         .content("""
                                 {
+                                  "senderFullName": "Amahle Dlamini",
                                   "amount": 8900.25,
                                   "currency": "EUR",
                                   "provider": "SWIFT",
                                   "beneficiaryName": "Nordic Trade BV",
+                                  "beneficiaryBankName": "Nordic Trade Bank",
                                   "beneficiaryAccountNumber": "NL12BANK34567890",
-                                  "swiftCode": "DEUTDEFF500"
+                                  "swiftCode": "DEUTDEFF500",
+                                  "country": "Netherlands",
+                                  "paymentReference": "Trade settlement April 2026"
                                 }
                                 """))
                 .andExpect(status().isOk())
@@ -188,12 +202,16 @@ class SecurityIntegrationTest {
                         .header("Authorization", bearer(customerToken))
                         .content("""
                                 {
+                                  "senderFullName": "Amahle Dlamini",
                                   "amount": 210.00,
                                   "currency": "GBP",
                                   "provider": "SWIFT",
                                   "beneficiaryName": "Atlas Partners",
+                                  "beneficiaryBankName": "Atlas Reserve Bank",
                                   "beneficiaryAccountNumber": "GB12TEST12345678",
-                                  "swiftCode": "BARCGB22"
+                                  "swiftCode": "BARCGB22",
+                                  "country": "United Kingdom",
+                                  "paymentReference": "Consulting invoice 245"
                                 }
                                 """))
                 .andExpect(status().isOk())

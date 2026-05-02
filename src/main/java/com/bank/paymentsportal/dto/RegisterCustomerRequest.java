@@ -11,6 +11,12 @@ public record RegisterCustomerRequest(
         @NotBlank(message = "Username is required")
         @Pattern(regexp = "^[A-Za-z0-9._]{3,30}$", message = "Username must be 3-30 characters and use letters, digits, underscore or dot")
         String username,
+        @NotBlank(message = "Email is required")
+        @Pattern(
+                regexp = "^[A-Za-z0-9._%+-]{3,64}@[A-Za-z0-9.-]{2,253}\\.[A-Za-z]{2,20}$",
+                message = "Email address is invalid"
+        )
+        String email,
         @NotBlank(message = "South African ID number is required")
         @Pattern(regexp = "^\\d{13}$", message = "South African ID number must be exactly 13 digits")
         String southAfricanIdNumber,

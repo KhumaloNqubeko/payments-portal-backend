@@ -47,6 +47,9 @@ public class AuthService {
         if (userRepository.existsByUsername(request.username())) {
             throw new ApiException(HttpStatus.CONFLICT, "Username is already in use");
         }
+        if (userRepository.existsByEmail(request.email())) {
+            throw new ApiException(HttpStatus.CONFLICT, "Email is already in use");
+        }
         if (userRepository.existsByAccountNumber(request.accountNumber())) {
             throw new ApiException(HttpStatus.CONFLICT, "Account number is already in use");
         }
@@ -54,9 +57,11 @@ public class AuthService {
             throw new ApiException(HttpStatus.CONFLICT, "South African ID number is already in use");
         }
 
+        // BCrypt automatically salts each password hash
         User user = userRepository.save(User.builder()
                 .fullName(request.fullName().trim())
                 .username(request.username().trim())
+                .email(request.email().trim().toLowerCase())
                 .southAfricanIdNumber(request.southAfricanIdNumber())
                 .accountNumber(request.accountNumber())
                 .passwordHash(passwordEncoder.encode(request.password()))
