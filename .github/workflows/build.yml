@@ -1,38 +1,100 @@
-name: Build
+name: Task 3 DevSecOps Pipeline
 
 on:
   push:
     branches:
-      - main
-
+      - "**"
+  pull_request:
 
 jobs:
-  build:
-    name: Build
+  secret-scan:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
-      - name: Set up JDK 11
-        uses: actions/setup-java@v1
+          fetch-depth: 0
+
+      - name: Run Gitleaks secret scan
+        uses: gitleaks/gitleaks-action@v2
         with:
-          java-version: 11
-      - name: Cache SonarQube packages
-        uses: actions/cache@v1
-        with:
-          path: ~/.sonar/cache
-          key: ${{ runner.os }}-sonar
-          restore-keys: ${{ runner.os }}-sonar
-      - name: Cache Maven packages
-        uses: actions/cache@v1
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-m2
-      - name: Build and analyze
+          args: detect --no-git --source .
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-        run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=task3-employee-international-payments-portal
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  sast:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Semgrep
+        run: python -m pip install --upgrade pip semgrep
+
+      - name: Run Semgrep
+        run: semgrep scan --config auto payments-portal-backend/src/main/java payments-portal-frontend/src --error
+
+  backend-quality:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: maven
+
+      - name: Run backend tests
+        working-directory: payments-portal-backend
+        run: mvn -B "-Dspring.profiles.active=test" test
+
+      - name: Build Spring Boot application
+        working-directory: payments-portal-backend
+        run: mvn -B -DskipTests package
+
+      - name: Run SpotBugs SAST
+        working-directory: payments-portal-backend
+        run: mvn -B com.github.spotbugs:spotbugs-maven-plugin:4.8.6.6:check
+
+      - name: Run OWASP dependency check
+        working-directory: payments-portal-backend
+        run: mvn -B org.owasp:dependency-check-maven:9.2.0:check -Dformat=HTML -DfailBuildOnCVSS=7
+
+      - name: Upload backend security reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-security-reports
+          path: |
+            payments-portal-backend/target/surefire-reports
+            payments-portal-backend/target/dependency-check-report.html
+            payments-portal-backend/target/dependency-check-report.json
+
+  frontend-quality:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: payments-portal-frontend/package-lock.json
