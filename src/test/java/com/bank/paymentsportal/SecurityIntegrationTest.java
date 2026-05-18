@@ -93,7 +93,7 @@ class SecurityIntegrationTest {
     }
 
     @Test
-    void invalidSouthAfricanIdIsRejected() throws Exception {
+    void publicRegistrationEndpointIsUnavailable() throws Exception {
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -106,29 +106,27 @@ class SecurityIntegrationTest {
                                   "password": "MyVery$ecure123"
                                 }
                                 """))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.details[0]", containsString("South African ID number")));
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
-    void passwordIsStoredHashed() throws Exception {
-        mockMvc.perform(post("/api/auth/register")
+    void loginWorksOnlyForPreconfiguredUsers() throws Exception {
+        mockMvc.perform(post("/api/employee/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "fullName": "Lebo Maseko",
-                                  "username": "lebo.maseko",
-                                  "email": "lebo.maseko@examplebank.test",
-                                  "southAfricanIdNumber": "9901015800084",
-                                  "accountNumber": "23456789",
-                                  "password": "MyVery$ecure123"
+                                  "usernameOrAccountNumber": "unknown.employee",
+                                  "password": "Employ3e!Pass1"
                                 }
                                 """))
-                .andExpect(status().isOk());
+                .andExpect(status().isUnauthorized());
+    }
 
-        User saved = userRepository.findByUsername("lebo.maseko").orElseThrow();
-        org.assertj.core.api.Assertions.assertThat(saved.getPasswordHash()).isNotEqualTo("MyVery$ecure123");
-        org.assertj.core.api.Assertions.assertThat(passwordEncoder.matches("MyVery$ecure123", saved.getPasswordHash())).isTrue();
+    @Test
+    void seededPasswordsAreStoredHashed() {
+        User saved = userRepository.findByUsername(EMPLOYEE_USERNAME).orElseThrow();
+        org.assertj.core.api.Assertions.assertThat(saved.getPasswordHash()).isNotEqualTo(EMPLOYEE_PASSWORD);
+        org.assertj.core.api.Assertions.assertThat(passwordEncoder.matches(EMPLOYEE_PASSWORD, saved.getPasswordHash())).isTrue();
     }
 
     @Test

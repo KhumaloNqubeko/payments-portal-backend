@@ -2,7 +2,6 @@ package com.bank.paymentsportal.controller;
 
 import com.bank.paymentsportal.dto.AuthRequest;
 import com.bank.paymentsportal.dto.AuthResponse;
-import com.bank.paymentsportal.dto.RegisterCustomerRequest;
 import com.bank.paymentsportal.dto.UserSummaryDto;
 import com.bank.paymentsportal.security.CustomUserPrincipal;
 import com.bank.paymentsportal.service.AuthService;
@@ -23,11 +22,6 @@ public class AuthController {
 
     public AuthController(AuthService authService) {
         this.authService = authService;
-    }
-
-    @PostMapping("/register")
-    public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterCustomerRequest request) {
-        return ResponseEntity.ok(authService.registerCustomer(request));
     }
 
     @PostMapping("/login")

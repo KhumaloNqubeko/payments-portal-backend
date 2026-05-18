@@ -2,7 +2,6 @@ package com.bank.paymentsportal.service;
 
 import com.bank.paymentsportal.dto.AuthRequest;
 import com.bank.paymentsportal.dto.AuthResponse;
-import com.bank.paymentsportal.dto.RegisterCustomerRequest;
 import com.bank.paymentsportal.dto.UserSummaryDto;
 import com.bank.paymentsportal.entity.User;
 import com.bank.paymentsportal.entity.UserRole;
@@ -14,61 +13,27 @@ import java.util.Optional;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class AuthService {
 
     private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
     private final MaskingService maskingService;
     private final AuditLogService auditLogService;
 
     public AuthService(UserRepository userRepository,
-                       PasswordEncoder passwordEncoder,
                        AuthenticationManager authenticationManager,
                        JwtService jwtService,
                        MaskingService maskingService,
                        AuditLogService auditLogService) {
         this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
         this.authenticationManager = authenticationManager;
         this.jwtService = jwtService;
         this.maskingService = maskingService;
         this.auditLogService = auditLogService;
-    }
-
-    @Transactional
-    public AuthResponse registerCustomer(RegisterCustomerRequest request) {
-        if (userRepository.existsByUsername(request.username())) {
-            throw new ApiException(HttpStatus.CONFLICT, "Username is already in use");
-        }
-        if (userRepository.existsByEmail(request.email())) {
-            throw new ApiException(HttpStatus.CONFLICT, "Email is already in use");
-        }
-        if (userRepository.existsByAccountNumber(request.accountNumber())) {
-            throw new ApiException(HttpStatus.CONFLICT, "Account number is already in use");
-        }
-        if (userRepository.existsBySouthAfricanIdNumber(request.southAfricanIdNumber())) {
-            throw new ApiException(HttpStatus.CONFLICT, "South African ID number is already in use");
-        }
-
-        // BCrypt automatically salts each password hash
-        User user = userRepository.save(User.builder()
-                .fullName(request.fullName().trim())
-                .username(request.username().trim())
-                .email(request.email().trim().toLowerCase())
-                .southAfricanIdNumber(request.southAfricanIdNumber())
-                .accountNumber(request.accountNumber())
-                .passwordHash(passwordEncoder.encode(request.password()))
-                .role(UserRole.CUSTOMER)
-                .build());
-        auditLogService.log(user.getId(), "REGISTER_CUSTOMER", "USER", user.getId(), "role=CUSTOMER");
-        return buildAuthResponse(user);
     }
 
     public AuthResponse loginCustomer(AuthRequest request) {
