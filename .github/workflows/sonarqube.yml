@@ -1,0 +1,36 @@
+name: SonarQube Analysis
+
+on:
+  push:
+    branches:
+      - "**"
+  pull_request:
+
+jobs:
+  sonarqube:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: maven
+
+      - name: Build, test, and scan with SonarQube
+        if: env.SONAR_HOST_URL != '' && env.SONAR_TOKEN != ''
+        run: mvn -B "-Dspring.profiles.active=test" verify sonar:sonar -Dsonar.host.url="${SONAR_HOST_URL}" -Dsonar.token="${SONAR_TOKEN}"
+
+      - name: Skip SonarQube scan
+        if: env.SONAR_HOST_URL == '' || env.SONAR_TOKEN == ''
+        run: echo "SONAR_HOST_URL and SONAR_TOKEN secrets are required to run SonarQube analysis."

@@ -1,0 +1,45 @@
+spring:
+  config:
+    import: optional:file:.env[.properties]
+  application:
+    name: payments-portal-backend
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/payments_portal}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: false
+        jdbc.time_zone: UTC
+
+server:
+  port: ${SERVER_PORT:8080}
+  ssl:
+    enabled: ${SSL_ENABLED:true}
+    key-store: ${SSL_KEY_STORE:classpath:keystore.p12}
+    key-store-password: ${SSL_KEY_STORE_PASSWORD}
+    key-store-type: ${SSL_KEY_STORE_TYPE:PKCS12}
+
+  error:
+    include-message: never
+    include-binding-errors: never
+
+app:
+  frontend-url: ${FRONTEND_URL:https://localhost:5173}
+  jwt:
+    secret: ${JWT_SECRET}
+    expiration-minutes: ${JWT_EXPIRATION_MINUTES:120}
+  security:
+    require-https: ${REQUIRE_HTTPS:true}
+
+logging:
+  level:
+    org:
+      springframework:
+        security: INFO

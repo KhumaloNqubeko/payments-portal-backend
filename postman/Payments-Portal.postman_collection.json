@@ -1,0 +1,224 @@
+{
+  "info": {
+    "name": "Task 3 Employee International Payments Portal",
+    "_postman_id": "8fcb9a40-62ea-4db4-bb0e-task3-employee-portal",
+    "description": "Postman and Newman collection for the Task 3 static-login employee international payments portal.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Customer Login",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Customer login succeeded', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "const json = pm.response.json();",
+              "pm.collectionVariables.set('customerToken', json.token);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"usernameOrAccountNumber\": \"nonhlekhumzie\",\n  \"password\": \"Cust0mer!Pass1\"\n}"
+        },
+        "url": "{{baseUrl}}/auth/login"
+      }
+    },
+    {
+      "name": "Customer Blocked From Employee Endpoint",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Customers cannot access employee endpoints', function () {",
+              "  pm.response.to.have.status(403);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{customerToken}}" }
+        ],
+        "url": "{{baseUrl}}/employee/transactions"
+      }
+    },
+    {
+      "name": "Create Payment",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Payment created as pending verification', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "const json = pm.response.json();",
+              "pm.expect(json.status).to.eql('PENDING_VERIFICATION');",
+              "pm.collectionVariables.set('transactionId', String(json.id));"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{customerToken}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"senderFullName\": \"Nokwandisa Khumalo\",\n  \"amount\": 8900.25,\n  \"currency\": \"EUR\",\n  \"provider\": \"SWIFT\",\n  \"beneficiaryName\": \"Nordic Trade BV\",\n  \"beneficiaryBankName\": \"Nordic Trade Bank\",\n  \"beneficiaryAccountNumber\": \"NL12BANK34567890\",\n  \"swiftCode\": \"DEUTDEFF500\",\n  \"country\": \"Netherlands\",\n  \"paymentReference\": \"Trade settlement April 2026\"\n}"
+        },
+        "url": "{{baseUrl}}/payments"
+      }
+    },
+    {
+      "name": "My Transactions",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Customer transaction list loads', function () {",
+              "  pm.response.to.have.status(200);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{customerToken}}" }
+        ],
+        "url": "{{baseUrl}}/payments/my-transactions"
+      }
+    },
+    {
+      "name": "Employee Login",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Employee login succeeded', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "const json = pm.response.json();",
+              "pm.collectionVariables.set('employeeToken', json.token);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"usernameOrAccountNumber\": \"nonokhumzie\",\n  \"password\": \"Employ3e!Pass1\"\n}"
+        },
+        "url": "{{baseUrl}}/employee/auth/login"
+      }
+    },
+    {
+      "name": "Employee Transactions",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Employee transaction queue loads', function () {",
+              "  pm.response.to.have.status(200);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{employeeToken}}" }
+        ],
+        "url": "{{baseUrl}}/employee/transactions"
+      }
+    },
+    {
+      "name": "Verify Transaction",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Employee verification succeeded', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "const json = pm.response.json();",
+              "pm.expect(json.status).to.eql('VERIFIED');"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{employeeToken}}" }
+        ],
+        "url": "{{baseUrl}}/employee/transactions/{{transactionId}}/verify"
+      }
+    },
+    {
+      "name": "Submit To SWIFT",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Employee SWIFT submission succeeded', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "const json = pm.response.json();",
+              "pm.expect(json.status).to.eql('SUBMITTED_TO_SWIFT');"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{employeeToken}}" }
+        ],
+        "url": "{{baseUrl}}/employee/transactions/{{transactionId}}/submit-swift"
+      }
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080/api" },
+    { "key": "customerToken", "value": "" },
+    { "key": "employeeToken", "value": "" },
+    { "key": "transactionId", "value": "" }
+  ]
+}
