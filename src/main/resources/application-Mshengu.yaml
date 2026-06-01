@@ -19,7 +19,7 @@ spring:
         jdbc.time_zone: UTC
 
 server:
-  port: ${SERVER_PORT:8080}
+  port: ${SERVER_PORT:8090}
   ssl:
     enabled: ${SSL_ENABLED:true}
     key-store: ${SSL_KEY_STORE:classpath:keystore.p12}

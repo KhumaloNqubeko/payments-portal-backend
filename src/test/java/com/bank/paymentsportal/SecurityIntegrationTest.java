@@ -123,6 +123,23 @@ class SecurityIntegrationTest {
     }
 
     @Test
+    void emptyEmployeeLoginShowsSingleRequiredMessagePerField() throws Exception {
+        mockMvc.perform(post("/api/employee/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "usernameOrAccountNumber": "",
+                                  "password": ""
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Validation failed"))
+                .andExpect(jsonPath("$.details.length()").value(2))
+                .andExpect(jsonPath("$.details[0]").value("Username or account number is required"))
+                .andExpect(jsonPath("$.details[1]").value("Password is required"));
+    }
+
+    @Test
     void seededPasswordsAreStoredHashed() {
         User saved = userRepository.findByUsername(EMPLOYEE_USERNAME).orElseThrow();
         org.assertj.core.api.Assertions.assertThat(saved.getPasswordHash()).isNotEqualTo(EMPLOYEE_PASSWORD);
